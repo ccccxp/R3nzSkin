@@ -1,7 +1,6 @@
 #pragma once
 
 #include "xorstr.hpp"
-#include "Injector.hpp"
 
 namespace R3nzSkinInjector {
 
@@ -75,23 +74,14 @@ namespace R3nzSkinInjector {
 					if (cheatState) {
 						this->dllStatusLabel->Text = L"Injected";
 						this->dllStatusLabel->ForeColor = Color::FromArgb(255, 252, 220, 107);
+						
+						// Auto-hide window when game is running and injection is successful
+						if (this->Visible) {
+							this->Invoke(gcnew Action(this, &R3nzUI::hideWindow));
+						}
 					}
 					else {
 						this->dllStatusLabel->Text = L"Not Injected";
-
-// 
-// dllPathLabel
-// 
-this->dllPathLabel->AutoSize = true;
-this->dllPathLabel->FlatStyle = FlatStyle::Flat;
-this->dllPathLabel->Font = gcnew Drawing::Font(L"Arial", 6.25F, FontStyle::Regular, GraphicsUnit::Point, static_cast<Byte>(162));
-this->dllPathLabel->ForeColor = Color::FromArgb(180, 180, 180);
-this->dllPathLabel->Location = Point(6, 36);
-this->dllPathLabel->Name = L"dllPathLabel";
-this->dllPathLabel->Size = Drawing::Size(230, 20);
-this->dllPathLabel->TabIndex = 3;
-this->dllPathLabel->Text = L"Location: Loading...";
-this->dllPathLabel->MaximumSize = Drawing::Size(230, 0);
 						this->dllStatusLabel->ForeColor = Color::FromArgb(255, 245, 8, 83);
 					}
 				}
@@ -100,9 +90,29 @@ this->dllPathLabel->MaximumSize = Drawing::Size(230, 0);
 					this->gameStatusLabel->ForeColor = Color::FromArgb(255, 245, 8, 83);
 					this->dllStatusLabel->Text = L"Not Injected";
 					this->dllStatusLabel->ForeColor = Color::FromArgb(255, 245, 8, 83);
+					
+					// Auto-show window when game ends
+					if (!this->Visible && cheatState) {
+						cheatState = false;  // Reset state
+						this->Invoke(gcnew Action(this, &R3nzUI::showWindow));
+					}
 				}
 				Thread::Sleep(1000);
 			}
+		}
+		
+		void hideWindow()
+		{
+			this->Hide();
+			this->notifyIcon->Visible = true;
+			this->notifyIcon->ShowBalloonTip(2000, L"R3nzSkin", L"Injector minimized to tray. Game running.", ToolTipIcon::Info);
+		}
+		
+		void showWindow()
+		{
+			this->Show();
+			this->WindowState = FormWindowState::Normal;
+			this->notifyIcon->Visible = false;
 		}
 
 		void saveSettings()
@@ -149,7 +159,6 @@ this->dllPathLabel->MaximumSize = Drawing::Size(230, 0);
 		Button^ startButton;
 		Label^ injectorStatusLabel;
 		Label^ dllStatusLabel;
-		Label^ dllPathLabel;
 		Label^ gameStatusLabel;
 		Label^ clientStatusLabel;
 		GroupBox^ injectorStatusGroupBox;
@@ -172,7 +181,6 @@ this->dllPathLabel->MaximumSize = Drawing::Size(230, 0);
 			   this->startButton = gcnew Button();
 			   this->injectorStatusLabel = gcnew Label();
 			   this->dllStatusLabel = gcnew Label();
-			this->dllPathLabel = gcnew Label();
 			   this->gameStatusLabel = gcnew Label();
 			   this->injectorStatusGroupBox = gcnew GroupBox();
 			   this->leagueClientStatusGroupBox = gcnew GroupBox();
@@ -285,13 +293,12 @@ this->dllPathLabel->MaximumSize = Drawing::Size(230, 0);
 		   	   // dllStatusGroupBox
 		   	   // 
 			   this->dllStatusGroupBox->Controls->Add(this->dllStatusLabel);
-			this->dllStatusGroupBox->Controls->Add(this->dllPathLabel);
 			   this->dllStatusGroupBox->FlatStyle = FlatStyle::Flat;
 			   this->dllStatusGroupBox->Font = gcnew Drawing::Font(L"Arial", 6.75F, FontStyle::Bold, GraphicsUnit::Point, static_cast<Byte>(162));
 			   this->dllStatusGroupBox->ForeColor = Color::White;
 			   this->dllStatusGroupBox->Location = Point(12, 232);
 			   this->dllStatusGroupBox->Name = L"dllStatusGroupBox";
-			   this->dllStatusGroupBox->Size = Drawing::Size(250, 68);
+			   this->dllStatusGroupBox->Size = Drawing::Size(250, 45);
 			   this->dllStatusGroupBox->TabIndex = 9;
 			   this->dllStatusGroupBox->TabStop = false;
 			   this->dllStatusGroupBox->Text = L"R3nzSkin Status";
@@ -357,7 +364,7 @@ this->dllPathLabel->MaximumSize = Drawing::Size(230, 0);
 			   this->AutoScaleDimensions = SizeF(7, 14);
 			   this->AutoScaleMode = Windows::Forms::AutoScaleMode::Font;
 			   this->BackColor = Color::FromArgb(32, 30, 30);
-			   this->ClientSize = Drawing::Size(273, 330);
+			   this->ClientSize = Drawing::Size(273, 307);
 			   this->Controls->Add(this->menuStrip);
 		   	   this->Controls->Add(this->copyrightLabel);
 			   this->Controls->Add(this->dllStatusGroupBox);

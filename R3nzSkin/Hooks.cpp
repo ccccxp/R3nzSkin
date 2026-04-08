@@ -3,6 +3,7 @@
 #include <Windows.h>
 #include <ShlObj.h>
 #include <cinttypes>
+#include <cstddef>
 #include <filesystem>
 #include <string>
 
@@ -26,7 +27,7 @@ static inline void testFunc() noexcept
 	
 	// Example Func
 	const auto minions{ cheatManager.memory->minionList };
-	for (auto i{ 0u }; i < minions->length; ++i) {
+	for (std::size_t i{ 0u }; i < minions->length; ++i) {
 		const auto minion{ minions->list[i] };
 		const auto owner{ minion->getGoldRedirectTarget() };
 		cheatManager.logger->addLog("Minion: %s\n\tModelName: %s\n\t", minion->get_name()->c_str(), minion->get_character_data_stack()->base_skin.model.str);
@@ -42,9 +43,11 @@ static inline void testFunc() noexcept
 
 static LRESULT WINAPI wndProc(const HWND window, const UINT msg, const WPARAM wParam, const LPARAM lParam) noexcept
 {
+	if (ImGui_ImplWin32_WndProcHandler(window, msg, wParam, lParam))
+		return true;
+
 	if (msg == WM_KEYDOWN) {
-		const auto menuKey{ cheatManager.config->menuKey.getKey() };
-		if (wParam == static_cast<WPARAM>(menuKey) || wParam == VK_INSERT) {
+		if (wParam == cheatManager.config->menuKey.getKey()) {
 			cheatManager.gui->is_open = !cheatManager.gui->is_open;
 			if (!cheatManager.gui->is_open)
 				cheatManager.config->save();
@@ -89,9 +92,6 @@ static LRESULT WINAPI wndProc(const HWND window, const UINT msg, const WPARAM wP
 			testFunc();
 		}
 	}
-
-	if (ImGui_ImplWin32_WndProcHandler(window, msg, wParam, lParam))
-		return true;
 
 	return ::CallWindowProc(originalWndProc, window, msg, wParam, lParam);
 }
@@ -324,7 +324,7 @@ void Hooks::init() noexcept
 		}
 
 		const auto my_team{ player ? player->get_team() : 1 };
-		for (auto i{ 0u }; i < heroes->length; ++i) {
+		for (std::size_t i{ 0u }; i < heroes->length; ++i) {
 			const auto hero{ heroes->list[i] };
 			if (hero == player)
 				continue;
@@ -346,7 +346,7 @@ void Hooks::init() noexcept
 		}
 	});
 
-	for (auto i{ 0u }; i < heroes->length; ++i) {
+	for (std::size_t i{ 0u }; i < heroes->length; ++i) {
 		if (const auto hero{ heroes->list[i] }; !hero->get_character_data_stack()->stack.empty()) {
 			// Viego transforms into another champion as 2nd form, our own skin's id may not match for every champion. (same problem exists in sylas) 
 			if (const auto championName{ fnv::hash_runtime(hero->get_character_data_stack()->base_skin.model.str) }; championName == FNV("Viego") || championName == FNV("Sylas"))
@@ -359,7 +359,7 @@ void Hooks::init() noexcept
 		}
 	}
 
-	for (auto i{ 0u }; i < minions->length; ++i) {
+	for (std::size_t i{ 0u }; i < minions->length; ++i) {
 		const auto minion{ minions->list[i] };
 
 		if (minion->isLaneMinion() && cheatManager.config->current_minion_skin_index != -1) {
@@ -413,7 +413,7 @@ void Hooks::install() noexcept
 
 void Hooks::uninstall() noexcept
 {
-	::SetWindowLongW(cheatManager.memory->window, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(originalWndProc));
+	::SetWindowLongPtrW(cheatManager.memory->window, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(originalWndProc));
 	swap_chain_vmt->unhook();
 	cheatManager.cheatState = false;
 }
