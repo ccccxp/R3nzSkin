@@ -150,7 +150,6 @@ this->dllPathLabel->MaximumSize = Drawing::Size(230, 0);
 		Label^ injectorStatusLabel;
 		Label^ dllStatusLabel;
 		Label^ dllPathLabel;
-		Label^ dllPathLabel;
 		Label^ gameStatusLabel;
 		Label^ clientStatusLabel;
 		GroupBox^ injectorStatusGroupBox;
