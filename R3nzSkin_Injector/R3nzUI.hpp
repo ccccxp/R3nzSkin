@@ -1,6 +1,7 @@
 #pragma once
 
 #include "xorstr.hpp"
+#include "Injector.hpp"
 
 namespace R3nzSkinInjector {
 
@@ -134,8 +135,6 @@ namespace R3nzSkinInjector {
 		Button^ startButton;
 		Label^ injectorStatusLabel;
 		Label^ dllStatusLabel;
-		Label^ dllPathLabel;
-		Label^ dllPathLabel;
 		Label^ gameStatusLabel;
 		Label^ clientStatusLabel;
 		GroupBox^ injectorStatusGroupBox;
@@ -158,8 +157,6 @@ namespace R3nzSkinInjector {
 			   this->startButton = gcnew Button();
 			   this->injectorStatusLabel = gcnew Label();
 			   this->dllStatusLabel = gcnew Label();
-			this->dllPathLabel = gcnew Label();
-			this->dllPathLabel = gcnew Label();
 			   this->gameStatusLabel = gcnew Label();
 			   this->injectorStatusGroupBox = gcnew GroupBox();
 			   this->leagueClientStatusGroupBox = gcnew GroupBox();
@@ -217,38 +214,6 @@ namespace R3nzSkinInjector {
 			   this->dllStatusLabel->Size = Drawing::Size(94, 18);
 			   this->dllStatusLabel->TabIndex = 2;
 			   this->dllStatusLabel->Text = L"Not Injected";
-
-			// 
-			// dllPathLabel
-			// 
-			this->dllPathLabel->AutoSize = true;
-			this->dllPathLabel->FlatStyle = FlatStyle::Flat;
-			this->dllPathLabel->Font = gcnew Drawing::Font(L"Arial", 6.25F, FontStyle::Regular, GraphicsUnit::Point, static_cast<Byte>(162));
-			this->dllPathLabel->ForeColor = Color::FromArgb(180, 180, 180);
-			this->dllPathLabel->Location = Point(6, 36);
-			this->dllPathLabel->Name = L"dllPathLabel";
-			this->dllPathLabel->Size = Drawing::Size(230, 20);
-			this->dllPathLabel->TabIndex = 3;
-			this->dllPathLabel->Text = L"Location: Loading...";
-			this->dllPathLabel->MaximumSize = Drawing::Size(230, 0);
-
-			
-
-			// 
-			// dllPathLabel
-			// 
-			this->dllPathLabel->AutoSize = true;
-			this->dllPathLabel->FlatStyle = FlatStyle::Flat;
-			this->dllPathLabel->Font = gcnew Drawing::Font(L"Arial", 6.25F, FontStyle::Regular, GraphicsUnit::Point, static_cast<Byte>(162));
-			this->dllPathLabel->ForeColor = Color::FromArgb(180, 180, 180);
-			this->dllPathLabel->Location = Point(6, 36);
-			this->dllPathLabel->Name = L"dllPathLabel";
-			this->dllPathLabel->Size = Drawing::Size(230, 20);
-			this->dllPathLabel->TabIndex = 3;
-			this->dllPathLabel->Text = L"Location: Loading...";
-			this->dllPathLabel->MaximumSize = Drawing::Size(230, 0);
-
-			
 			   // 
 			   // gameStatusLabel
 			   // 
@@ -304,14 +269,12 @@ namespace R3nzSkinInjector {
 		   	   // dllStatusGroupBox
 		   	   // 
 			   this->dllStatusGroupBox->Controls->Add(this->dllStatusLabel);
-			this->dllStatusGroupBox->Controls->Add(this->dllPathLabel);
-			this->dllStatusGroupBox->Controls->Add(this->dllPathLabel);
 			   this->dllStatusGroupBox->FlatStyle = FlatStyle::Flat;
 			   this->dllStatusGroupBox->Font = gcnew Drawing::Font(L"Arial", 6.75F, FontStyle::Bold, GraphicsUnit::Point, static_cast<Byte>(162));
 			   this->dllStatusGroupBox->ForeColor = Color::White;
 			   this->dllStatusGroupBox->Location = Point(12, 232);
 			   this->dllStatusGroupBox->Name = L"dllStatusGroupBox";
-			   this->dllStatusGroupBox->Size = Drawing::Size(250, 68);
+			   this->dllStatusGroupBox->Size = Drawing::Size(250, 45);
 			   this->dllStatusGroupBox->TabIndex = 9;
 			   this->dllStatusGroupBox->TabStop = false;
 			   this->dllStatusGroupBox->Text = L"R3nzSkin Status";
@@ -377,7 +340,7 @@ namespace R3nzSkinInjector {
 			   this->AutoScaleDimensions = SizeF(7, 14);
 			   this->AutoScaleMode = Windows::Forms::AutoScaleMode::Font;
 			   this->BackColor = Color::FromArgb(32, 30, 30);
-			   this->ClientSize = Drawing::Size(273, 330);
+			   this->ClientSize = Drawing::Size(273, 307);
 			   this->Controls->Add(this->menuStrip);
 		   	   this->Controls->Add(this->copyrightLabel);
 			   this->Controls->Add(this->dllStatusGroupBox);
