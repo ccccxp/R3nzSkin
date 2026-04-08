@@ -35,12 +35,11 @@ jobs:
         shell: pwsh
         run: |
           $config = "${{ matrix.configuration }}"
-          $releaseDir = Join-Path $env:GITHUB_WORKSPACE "Release/$config"
           $packageDir = Join-Path $env:GITHUB_WORKSPACE "artifacts/$config"
           New-Item -ItemType Directory -Path $packageDir -Force | Out-Null
 
-          $dllPath = Join-Path $releaseDir "d3d11_helper.dll"
-          $exePath = Join-Path $releaseDir "R3nzSkin_Injector.exe"
+          $dllPath = Join-Path $env:GITHUB_WORKSPACE "R3nzSkin/Release/$config/d3d11_helper.dll"
+          $exePath = Join-Path $env:GITHUB_WORKSPACE "R3nzSkin_Injector/Release/$config/R3nzSkin_Injector.exe"
 
           if (-not (Test-Path $dllPath)) { throw "Missing artifact: $dllPath" }
           if (-not (Test-Path $exePath)) { throw "Missing artifact: $exePath" }
