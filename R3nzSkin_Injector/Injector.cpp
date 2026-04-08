@@ -84,13 +84,21 @@ bool WINAPI Injector::isInjected(const std::uint32_t pid) noexcept
 	return false;
 }
 
+std::wstring Injector::getDllPath() noexcept
+{
+        TCHAR current_dir[MAX_PATH];
+        LI_FN(GetModuleFileNameW)(nullptr, current_dir, MAX_PATH);
+        std::wstring path(current_dir);
+        auto pos = path.find_last_of(L"\\/");
+        if (pos != std::wstring::npos) {
+                path = path.substr(0, pos);
+        }
+        return path + _XorStrW(L"\\d3d11_helper.dll");
+}
+
 bool WINAPI Injector::inject(const std::uint32_t pid) noexcept
 {
-	TCHAR current_dir[MAX_PATH];
-	LI_FN(GetCurrentDirectoryW)(MAX_PATH, current_dir);
-	
-	// Obfuscated DLL name
-	const auto dll_path{ std::wstring(current_dir) + _XorStrW(L"\\d3d11_helper.dll") };
+        const auto dll_path{ Injector::getDllPath() };
 
 	if (const auto f{ std::ifstream(dll_path) }; !f.is_open()) {
 		LI_FN(MessageBoxW)(nullptr, _XorStrW(L"DLL file could not be found.\nTry reinstalling the cheat."), _XorStrW(L"Error"), MB_ICONERROR | MB_OK);
