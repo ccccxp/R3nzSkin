@@ -375,24 +375,16 @@ namespace AntiDetection {
 
 	// Comprehensive environment check
 	inline bool IsUnderMonitoring() noexcept {
+		// Check TP process (legacy behavior)
+		if (CheckTPProcess())
+			return true;
+
 		// Check debugger
 		if (IsDebuggerPresent())
 			return true;
 
-		// Check enhanced debugger
-		if (IsDebuggerPresentEx())
-			return true;
-
 		// Check analysis tools
 		if (IsAnalysisToolPresent())
-			return true;
-
-		// Check VM (optional - may cause false positives)
-		// if (IsVirtualMachine())
-		//     return true;
-
-		// Check sandbox
-		if (IsSandbox())
 			return true;
 
 		return false;

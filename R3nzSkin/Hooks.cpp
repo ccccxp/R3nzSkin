@@ -42,11 +42,9 @@ static inline void testFunc() noexcept
 
 static LRESULT WINAPI wndProc(const HWND window, const UINT msg, const WPARAM wParam, const LPARAM lParam) noexcept
 {
-	if (ImGui_ImplWin32_WndProcHandler(window, msg, wParam, lParam))
-		return true;
-
 	if (msg == WM_KEYDOWN) {
-		if (wParam == cheatManager.config->menuKey.getKey()) {
+		const auto menuKey{ cheatManager.config->menuKey.getKey() };
+		if (wParam == static_cast<WPARAM>(menuKey) || wParam == VK_INSERT) {
 			cheatManager.gui->is_open = !cheatManager.gui->is_open;
 			if (!cheatManager.gui->is_open)
 				cheatManager.config->save();
@@ -91,6 +89,9 @@ static LRESULT WINAPI wndProc(const HWND window, const UINT msg, const WPARAM wP
 			testFunc();
 		}
 	}
+
+	if (ImGui_ImplWin32_WndProcHandler(window, msg, wParam, lParam))
+		return true;
 
 	return ::CallWindowProc(originalWndProc, window, msg, wParam, lParam);
 }
