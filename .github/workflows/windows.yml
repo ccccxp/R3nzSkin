@@ -1,18 +1,61 @@
-name: Windows
+name: Windows Build
 
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
+    runs-on: windows-2022
     strategy:
+      fail-fast: false
       matrix:
-        os: [windows-2022]
         configuration: [RiotGamesServers, ChinaServer]
+
     steps:
-    - uses: actions/checkout@v3.5.2
-    - name: Add msbuild to PATH
-      uses: microsoft/setup-msbuild@v1.3.1
-    - name: Build
-      shell: cmd
-      run: msbuild R3nzSkin/R3nzSkin.vcxproj /p:Platform=x64 /p:Configuration=${{ matrix.configuration }}
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Build R3nzSkin (DLL)
+        shell: cmd
+        run: msbuild R3nzSkin/R3nzSkin.vcxproj /m /p:Platform=x64 /p:Configuration=${{ matrix.configuration }}
+
+      - name: Build Injector (EXE)
+        shell: cmd
+        run: msbuild R3nzSkin_Injector/R3nzSkin_Injector.vcxproj /m /p:Platform=x64 /p:Configuration=${{ matrix.configuration }}
+
+      - name: Package artifacts
+        shell: pwsh
+        run: |
+          $config = "${{ matrix.configuration }}"
+          $releaseDir = Join-Path $env:GITHUB_WORKSPACE "Release/$config"
+          $packageDir = Join-Path $env:GITHUB_WORKSPACE "artifacts/$config"
+          New-Item -ItemType Directory -Path $packageDir -Force | Out-Null
+
+          $dllPath = Join-Path $releaseDir "d3d11_helper.dll"
+          $exePath = Join-Path $releaseDir "R3nzSkin_Injector.exe"
+
+          if (-not (Test-Path $dllPath)) { throw "Missing artifact: $dllPath" }
+          if (-not (Test-Path $exePath)) { throw "Missing artifact: $exePath" }
+
+          Copy-Item $dllPath -Destination $packageDir -Force
+          Copy-Item $exePath -Destination $packageDir -Force
+          Copy-Item README.md -Destination $packageDir -Force
+
+          $zipPath = Join-Path $env:GITHUB_WORKSPACE "artifacts/R3nzSkin-$config-x64.zip"
+          if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
+          Compress-Archive -Path "$packageDir/*" -DestinationPath $zipPath
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: R3nzSkin-${{ matrix.configuration }}-x64
+          path: artifacts/R3nzSkin-${{ matrix.configuration }}-x64.zip
+          if-no-files-found: error
