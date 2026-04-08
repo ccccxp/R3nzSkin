@@ -411,21 +411,6 @@ bool ManualMapper::Inject(DWORD processId, const std::wstring& dllPath) noexcept
         return false;
     }
 
-    // Create a named event in the target process to signal successful injection
-    // This is used by the injector to detect if the DLL is loaded
-    // The event name is based on the process ID
-    wchar_t eventName[64];
-    swprintf(eventName, 64, L"Global\\MM_%08X", processId);
-    
-    // Create the event in the target process using remote thread
-    // We'll use a simple approach: inject a small shellcode that creates the event
-    // For simplicity, we'll just create it from here (less stealth but works)
-    HANDLE hEvent = ::CreateEventW(nullptr, TRUE, TRUE, eventName);
-    if (hEvent) {
-        // Keep the event handle open - it will be closed when the process exits
-        // Don't close it here as it would destroy the event
-    }
-
     ::CloseHandle(hProcess);
     return true;
 }

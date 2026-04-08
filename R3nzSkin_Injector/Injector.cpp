@@ -1,4 +1,6 @@
 #include <Windows.h>
+#include <cstdarg>
+#include <cstdio>
 #include <cstdlib>
 #include <fstream>
 #include <psapi.h>
@@ -22,6 +24,31 @@ using namespace System::Globalization;
 using namespace System::Net;
 
 #define xor_clrstr_w(x) msclr::interop::marshal_as<String^>(static_cast<std::wstring>(_XorStrW(x)))
+
+namespace {
+void appendInjectorLog(const wchar_t* fmt, ...) noexcept
+{
+	wchar_t tempPath[MAX_PATH]{};
+	wchar_t logPath[MAX_PATH]{};
+	if (::GetTempPathW(MAX_PATH, tempPath) == 0)
+		std::wcscpy(logPath, L"C:\\Windows\\Temp\\R3nzInjector.log");
+	else
+		_snwprintf_s(logPath, MAX_PATH, _TRUNCATE, L"%sR3nzInjector.log", tempPath);
+
+	wchar_t message[2048]{};
+	va_list args;
+	va_start(args, fmt);
+	_vsnwprintf_s(message, _countof(message), _TRUNCATE, fmt, args);
+	va_end(args);
+
+	FILE* fp{ nullptr };
+	if (_wfopen_s(&fp, logPath, L"ab") != 0 || fp == nullptr)
+		return;
+
+	std::fwprintf(fp, L"%s\r\n", message);
+	std::fclose(fp);
+}
+}
 
 proclist_t WINAPI Injector::findProcesses(const std::wstring& name) noexcept
 {
@@ -99,17 +126,44 @@ std::wstring Injector::getDllPath() noexcept
 bool WINAPI Injector::inject(const std::uint32_t pid) noexcept
 {
         const auto dll_path{ Injector::getDllPath() };
+        appendInjectorLog(L"[inject] pid=%u path=%s", pid, dll_path.c_str());
 
 	if (const auto f{ std::ifstream(dll_path) }; !f.is_open()) {
+		appendInjectorLog(L"[inject] dll not found");
 		LI_FN(MessageBoxW)(nullptr, _XorStrW(L"DLL file could not be found.\nTry reinstalling the cheat."), _XorStrW(L"Error"), MB_ICONERROR | MB_OK);
 		return false;
 	}
 
-	// Prefer hook-based injection, then fallback to manual mapping for compatibility.
-	if (HookInjector::InjectViaCBT(pid, dll_path))
-		return true;
+	// Primary path: hook-based injection.
+	if (HookInjector::InjectViaCBT(pid, dll_path)) {
+		appendInjectorLog(L"[inject] InjectViaCBT ok, verifying target state...");
+		for (auto i = 0; i < 20; ++i) {
+			if (Injector::isInjected(pid)) {
+				appendInjectorLog(L"[inject] verified injected in target process");
+				return true;
+			}
+			std::this_thread::sleep_for(std::chrono::milliseconds(150));
+		}
+		appendInjectorLog(L"[inject] hook call returned success but target not detected as injected");
+		return false;
+	}
 
-	return ManualMapper::Inject(pid, dll_path);
+	appendInjectorLog(L"[inject] InjectViaCBT failed, trying manual mapper...");
+	if (ManualMapper::Inject(pid, dll_path)) {
+		appendInjectorLog(L"[inject] ManualMapper returned success, verifying target state...");
+		for (auto i = 0; i < 20; ++i) {
+			if (Injector::isInjected(pid)) {
+				appendInjectorLog(L"[inject] manual mapper verified injected in target process");
+				return true;
+			}
+			std::this_thread::sleep_for(std::chrono::milliseconds(150));
+		}
+		appendInjectorLog(L"[inject] manual mapper reported success but target not detected as injected");
+		return false;
+	}
+
+	appendInjectorLog(L"[inject] all injection methods failed");
+	return false;
 }
 
 void WINAPI Injector::enableDebugPrivilege() noexcept
