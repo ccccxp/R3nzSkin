@@ -119,13 +119,24 @@ __declspec(safebuffers) BOOL APIENTRY DllMain(const HMODULE hModule, const DWORD
         if (reason == DLL_PROCESS_ATTACH) {
                 DisableThreadLibraryCalls(hModule);
 
+                // Hook-based injector loads this DLL in injector process first to resolve exports.
+                // Only run cheat initialization inside actual League game process.
+                wchar_t processPath[MAX_PATH]{};
+                if (::GetModuleFileNameW(nullptr, processPath, MAX_PATH)) {
+                        if (::wcsstr(processPath, L"League of Legends.exe") == nullptr)
+                                return TRUE;
+                }
+
                 // Environment Check
                 if (AntiDetection::IsUnderMonitoring()) {
-                        // Silently fail or crash safely
+                        ::MessageBoxW(nullptr,
+                                L"R3nzSkin 注入被拦截。\n检测到反作弊/监控环境，DLL 已停止加载。",
+                                L"R3nzSkin",
+                                MB_OK | MB_ICONWARNING | MB_TOPMOST);
                         return FALSE;
                 }
 
-                HideThread(hModule);
+                HideThread(::GetCurrentThread());
                 std::setlocale(LC_ALL, ".utf8");
 
                 // Create a named event to signal successful injection
@@ -137,9 +148,8 @@ __declspec(safebuffers) BOOL APIENTRY DllMain(const HMODULE hModule, const DWORD
                 // Keep the event handle open - it will be closed when the process exits
 
                 ::_beginthreadex(nullptr, 0u, reinterpret_cast<_beginthreadex_proc_type>(DllAttach), nullptr, 0u, nullptr);
-                ::CloseHandle(hModule);
                 return TRUE;
         }
 
-        return FALSE;
+        return TRUE;
 }
