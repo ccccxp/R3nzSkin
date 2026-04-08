@@ -109,17 +109,8 @@ __declspec(safebuffers) static void WINAPI DllAttach([[maybe_unused]] LPVOID lp)
                         }
                         lastGameState = currentState;
                 }
-	::ExitProcess(0u);
-}
+        }
 
-__declspec(safebuffers) BOOL APIENTRY DllMain(const HMODULE hModule, const DWORD reason, [[maybe_unused]] LPVOID reserved)
-{
-	if (reason == DLL_PROCESS_ATTACH) {
-		DisableThreadLibraryCalls(hModule);
-
-		// Environment Check
-		if (AntiDetection::IsUnderMonitoring()) {
-			// Silently fail or crash safely
 			return FALSE;
 		}
 
