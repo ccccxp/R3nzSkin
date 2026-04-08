@@ -1,5 +1,12 @@
 #pragma once
 
+#include <Windows.h>
+#include <cstdarg>
+#include <cstdio>
+#include <cstring>
+#include <cwchar>
+#include <mutex>
+
 #include "imgui/imgui.h"
 
 // Logging control - only enabled in Debug mode for stealth
@@ -28,20 +35,52 @@ public:
 
     void addLog(const char* fmt, ...) noexcept
     {
-        #if ENABLE_LOGGING
-        auto old_size{ this->buffer.size() };
+        char message[2048]{};
         va_list args;
         va_start(args, fmt);
-        buffer.appendfv(fmt, args);
+        _vsnprintf_s(message, sizeof(message), _TRUNCATE, fmt, args);
         va_end(args);
+
+        appendFile(message);
+
+        #if ENABLE_LOGGING
+        auto old_size{ this->buffer.size() };
+        this->buffer.appendf("%s", message);
         for (const auto new_size{ this->buffer.size() }; old_size < new_size; ++old_size) {
             if (this->buffer[old_size] == '\n')
                 this->lineOffsets.push_back(old_size + 1);
         }
-        #else
-        // In Release mode, logging is disabled for stealth
-        (void)fmt; // Suppress unused parameter warning
         #endif
+    }
+
+    [[nodiscard]] static auto getLogFilePath() noexcept -> const wchar_t*
+    {
+        static wchar_t logPath[MAX_PATH]{};
+        static bool initialized{ false };
+
+        if (!initialized) {
+            wchar_t tempPath[MAX_PATH]{};
+            if (::GetTempPathW(MAX_PATH, tempPath) == 0)
+                std::wcscpy(logPath, L"C:\\Windows\\Temp\\R3nzSkin.log");
+            else
+                _snwprintf_s(logPath, MAX_PATH, _TRUNCATE, L"%sR3nzSkin.log", tempPath);
+            initialized = true;
+        }
+
+        return logPath;
+    }
+
+    static void appendFile(const char* message) noexcept
+    {
+        static std::mutex writeLock;
+        std::lock_guard<std::mutex> guard(writeLock);
+
+        FILE* fp{ nullptr };
+        if (_wfopen_s(&fp, getLogFilePath(), L"ab") != 0 || fp == nullptr)
+            return;
+
+        std::fwrite(message, 1, std::strlen(message), fp);
+        std::fclose(fp);
     }
 
     void draw() noexcept
