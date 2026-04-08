@@ -17,25 +17,26 @@ namespace AntiDetection {
 		PROCESSENTRY32W pe32{};
 		pe32.dwSize = sizeof(PROCESSENTRY32W);
 
-		// Known TP process names - expanded list
+		// Known TP process names (legacy stable list)
 		const wchar_t* tpProcesses[] = {
 			L"TenProtect.exe",
 			L"TPHelper.exe",
 			L"TProtect.exe",
 			L"TP.exe",
-			L"GameProtect.exe",
+			L"TenSafe.exe",
+			L"TenioDL.exe",
+			L"bugreport.exe",
+			L"ACE-Guard.exe",
+			L"ACE-Base.exe",
 			L"AntiCheatExpert.exe",
-			L"ACE-Base64.exe",
-			L"ACE-AT64.exe",
-			L"QQPCRTP.exe",
-			L"QQPCTray.exe"
+			L"ACE-Base64.exe"
 		};
 
 		bool found{ false };
 		if (::Process32FirstW(snapshot, &pe32)) {
 			do {
 				for (const auto* tpName : tpProcesses) {
-					if (::wcscmp(pe32.szExeFile, tpName) == 0) {
+					if (::_wcsicmp(pe32.szExeFile, tpName) == 0) {
 						found = true;
 						break;
 					}
@@ -374,14 +375,6 @@ namespace AntiDetection {
 
 	// Comprehensive environment check
 	inline bool IsUnderMonitoring() noexcept {
-		// Check TP process
-		if (CheckTPProcess())
-			return true;
-
-		// Check TP pre-start mode
-		if (CheckTPPreStart())
-			return true;
-
 		// Check debugger
 		if (IsDebuggerPresent())
 			return true;

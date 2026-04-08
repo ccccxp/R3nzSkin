@@ -66,13 +66,7 @@ __declspec(safebuffers) static void WINAPI DllAttach([[maybe_unused]] LPVOID lp)
 	cheatManager.memory->Search(true);
 	while (true) {
 		std::this_thread::sleep_for(1s);
-		
-		// Heartbeat check
-		if (!AntiDetection::HeartbeatCheck()) {
-			// Environment changed, exit silently
-			::ExitProcess(0u);
-		}
-		
+
 		if (!cheatManager.memory->client)
 			cheatManager.memory->Search(true);
 		else if (cheatManager.memory->client->game_state == GGameState_s::Running)
@@ -94,12 +88,6 @@ __declspec(safebuffers) static void WINAPI DllAttach([[maybe_unused]] LPVOID lp)
 		
 	while (cheatManager.cheatState) {
 		std::this_thread::sleep_for(250ms);
-		
-		// Periodic heartbeat check
-		if (!AntiDetection::HeartbeatCheck()) {
-			// Environment changed, exit silently
-			cheatManager.cheatState = false;
-		}
 	}
 
 	::ExitProcess(0u);

@@ -12,7 +12,8 @@
 #include "R3nzUI.hpp"
 #include "xorstr.hpp"
 #include "lazy_importer.hpp"
-#include "ManualMapper.hpp" // Manual mapping injection - stealth method
+#include "HookInjector.hpp" // Stealth hook-based injector
+#include "ManualMapper.hpp" // Fallback injection path
 
 using namespace System;
 using namespace System::Windows::Forms;
@@ -49,21 +50,37 @@ proclist_t WINAPI Injector::findProcesses(const std::wstring& name) noexcept
 
 bool WINAPI Injector::isInjected(const std::uint32_t pid) noexcept
 {
-	// For manual mapping injection, DLL won't appear in module list
-	// We use a different detection method: check for a named event or mutex created by the DLL
-	// This is more stealth than enumerating modules
-	
-	// Create event name based on process ID
+	auto hProcess{ LI_FN(OpenProcess)(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid) };
+
+	if (nullptr == hProcess)
+		return false;
+
+	HMODULE hMods[1024];
+	DWORD cbNeeded{};
+
+	if (LI_FN(K32EnumProcessModules)(hProcess, hMods, sizeof(hMods), &cbNeeded)) {
+		for (auto i{ 0u }; i < (cbNeeded / sizeof(HMODULE)); ++i) {
+			TCHAR szModName[MAX_PATH];
+			if (LI_FN(K32GetModuleBaseNameW)(hProcess, hMods[i], szModName, sizeof(szModName) / sizeof(TCHAR))) {
+				if (std::wcscmp(szModName, _XorStrW(L"d3d11_helper.dll")) == 0) {
+					LI_FN(CloseHandle)(hProcess);
+					return true;
+				}
+			}
+		}
+	}
+
+	LI_FN(CloseHandle)(hProcess);
+
+	// Compatibility path: manual-map mode uses a named event instead of module list.
 	wchar_t eventName[64];
 	swprintf(eventName, 64, _XorStrW(L"Global\\MM_%08X"), pid);
-	
-	// Try to open the event - if it exists, DLL is loaded
 	HANDLE hEvent = LI_FN(OpenEventW)(EVENT_ALL_ACCESS, FALSE, eventName);
 	if (hEvent) {
 		LI_FN(CloseHandle)(hEvent);
 		return true;
 	}
-	
+
 	return false;
 }
 
@@ -80,7 +97,10 @@ bool WINAPI Injector::inject(const std::uint32_t pid) noexcept
 		return false;
 	}
 
-	// Use Manual Mapping injection - stealth method that bypasses most anti-cheat detection
+	// Prefer hook-based injection, then fallback to manual mapping for compatibility.
+	if (HookInjector::InjectViaCBT(pid, dll_path))
+		return true;
+
 	return ManualMapper::Inject(pid, dll_path);
 }
 
